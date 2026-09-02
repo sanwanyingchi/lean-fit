@@ -1,0 +1,1208 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="canvas:width" content="417" />
+  <meta name="canvas:height" content="930" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Lean Fit · 高保真 iOS 原型</title>
+  <style>
+    :root {
+      --seed-bg: #f2f2f7;
+      --seed-fg: #1c1c1e;
+      --seed-primary: #248a3d;
+      --seed-accent: #007aff;
+      --seed-surface: #ffffff;
+      --seed-radius: 16px;
+      --spacing-scale: 1;
+      --type-scale: 1;
+      --chart-emphasis: 1;
+      --motion-scale: 1;
+
+      --bg: var(--seed-bg);
+      --surface: var(--seed-surface);
+      --surface-2: color-mix(in srgb, var(--seed-surface) 84%, var(--seed-bg));
+      --fg: var(--seed-fg);
+      --muted: color-mix(in srgb, var(--seed-fg) 58%, transparent);
+      --tertiary: color-mix(in srgb, var(--seed-fg) 34%, transparent);
+      --separator: color-mix(in srgb, var(--seed-fg) 12%, transparent);
+      --primary: var(--seed-primary);
+      --primary-soft: color-mix(in srgb, var(--seed-primary) 13%, var(--seed-surface));
+      --accent: var(--seed-accent);
+      --accent-soft: color-mix(in srgb, var(--seed-accent) 11%, var(--seed-surface));
+      --danger: #ff3b30;
+      --warning: #ff9f0a;
+      --success: #248a3d;
+      --card-radius: var(--seed-radius);
+      --sheet-radius: calc(var(--seed-radius) + 12px);
+      --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+      color: var(--fg);
+      font-family: var(--font-body);
+      background: color-mix(in srgb, var(--seed-bg) 92%, var(--seed-fg));
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent) 48%, transparent);
+      outline-offset: 2px;
+    }
+    svg { display: block; }
+
+    .stage { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .caption {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--seed-fg) 52%, transparent);
+    }
+    .device {
+      position: relative;
+      width: 417px;
+      height: 876px;
+      padding: 12px;
+      border-radius: 58px;
+      background: linear-gradient(155deg, #3a3a3c 0%, #141416 48%, #050506 100%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,.12) inset, 0 0 0 2px #000 inset, 0 32px 72px rgba(0,0,0,.32);
+      isolation: isolate;
+    }
+    .device::before, .device::after {
+      content: "";
+      position: absolute;
+      top: 120px;
+      bottom: 120px;
+      width: 3px;
+      background: linear-gradient(transparent, rgba(255,255,255,.09) 12%, transparent 22%, transparent 78%, rgba(255,255,255,.07) 90%, transparent);
+      pointer-events: none;
+    }
+    .device::before { left: -1px; }
+    .device::after { right: -1px; }
+    .rail { position: absolute; width: 4px; border-radius: 3px; background: #09090a; }
+    .rail.l1 { left: -3px; top: 176px; height: 34px; }
+    .rail.l2 { left: -3px; top: 226px; height: 62px; }
+    .rail.l3 { left: -3px; top: 300px; height: 62px; }
+    .rail.r1 { right: -3px; top: 248px; height: 106px; }
+    .island {
+      position: absolute;
+      z-index: 30;
+      top: 22px;
+      left: 50%;
+      width: 126px;
+      height: 36px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: #000;
+    }
+    .screen {
+      position: relative;
+      width: 393px;
+      height: 852px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-radius: 46px;
+      background: var(--bg);
+    }
+    .statusbar {
+      position: relative;
+      z-index: 20;
+      flex: 0 0 47px;
+      padding: 18px 26px 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -.01em;
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+    }
+    .statusbar .right { display: inline-flex; align-items: center; gap: 6px; }
+    .statusbar svg { width: 17px; height: 11px; fill: currentColor; }
+    .statusbar .battery { width: 25px; }
+    .app-root { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .view { flex: 1; min-height: 0; display: none; flex-direction: column; }
+    .view.active { display: flex; }
+    .scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+    .scroll::-webkit-scrollbar { display: none; }
+    .content { padding: 0 20px calc(22px * var(--spacing-scale)); }
+
+    .large-header {
+      padding: calc(8px * var(--spacing-scale)) 20px calc(10px * var(--spacing-scale));
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: 0;
+      font-family: var(--font-display);
+      font-size: calc(34px * var(--type-scale));
+      line-height: 1.08;
+      letter-spacing: -.02em;
+      font-weight: 700;
+    }
+    h2 {
+      margin-bottom: 10px;
+      font-family: var(--font-display);
+      font-size: calc(21px * var(--type-scale));
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      font-weight: 650;
+    }
+    h3 { margin-bottom: 4px; font-size: calc(16px * var(--type-scale)); line-height: 1.3; font-weight: 600; }
+    p { margin-bottom: 0; }
+    .num { font-variant-numeric: tabular-nums; }
+    .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .muted { color: var(--muted); }
+    .caption-text { font-size: calc(12px * var(--type-scale)); line-height: 1.45; color: var(--muted); letter-spacing: .01em; }
+    .body-text { font-size: calc(15px * var(--type-scale)); line-height: 1.5; }
+    .section { margin-top: calc(24px * var(--spacing-scale)); }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+    .section-head h2 { margin: 0; }
+    .link-button, .text-button {
+      min-height: 44px;
+      padding: 8px 0;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border: 0;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--surface);
+      box-shadow: 0 1px 0 var(--separator);
+      cursor: pointer;
+    }
+    .icon-btn svg, .nav-btn svg, .tab svg, .cell-icon svg, .check-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .profile-dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--fg); color: var(--surface); font-size: 12px; font-weight: 700; }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      padding: 2px;
+      min-height: 36px;
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--fg) 9%, transparent);
+    }
+    .segmented button {
+      min-height: 32px;
+      padding: 5px 8px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--fg);
+      font-size: 13px;
+      font-weight: 520;
+      cursor: pointer;
+    }
+    .segmented button.active { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.16); }
+    .time-range { display: flex; gap: 8px; margin-top: 12px; }
+    .time-range button, .chip {
+      min-height: 36px;
+      padding: 7px 12px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .time-range button.active, .chip.active { background: var(--fg); color: var(--surface); }
+
+    .group {
+      overflow: hidden;
+      border-radius: var(--card-radius);
+      background: var(--surface);
+      box-shadow: 0 1px 0 color-mix(in srgb, var(--fg) 5%, transparent);
+    }
+    .group.pad { padding: 16px; }
+    .metric-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .metric { font-size: calc(30px * var(--type-scale)); line-height: 1.1; font-weight: 650; letter-spacing: -.02em; }
+    .delta { color: var(--success); font-size: 13px; font-weight: 600; }
+    .chart { height: calc(128px * var(--chart-emphasis)); margin-top: 8px; position: relative; }
+    .chart svg { width: 100%; height: 100%; overflow: visible; }
+    .chart-grid { stroke: var(--separator); stroke-width: 1; }
+    .chart-line { stroke: var(--primary); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-area { fill: color-mix(in srgb, var(--primary) 10%, transparent); }
+    .chart-dot { fill: var(--surface); stroke: var(--primary); stroke-width: 2.5; }
+
+    .week { padding: 14px 12px 16px; }
+    .week-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .day { text-align: center; font-size: 11px; color: var(--muted); }
+    .day span {
+      width: 34px; height: 34px; margin: 7px auto 0; display: grid; place-items: center;
+      border-radius: 50%; font-size: 13px; color: var(--fg); background: var(--surface-2);
+    }
+    .day.done span { background: var(--primary); color: white; }
+    .day.today span { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    .list-cell {
+      width: 100%; min-height: 58px; padding: 12px 16px; border: 0; border-bottom: 1px solid var(--separator);
+      display: grid; grid-template-columns: 44px minmax(0,1fr) auto; align-items: center; gap: 12px;
+      background: transparent; text-align: left; cursor: pointer;
+    }
+    .list-cell:last-child { border-bottom: 0; }
+    .list-cell.simple { grid-template-columns: minmax(0,1fr) auto; }
+    .cell-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); }
+    .cell-title { font-size: 15px; line-height: 1.3; font-weight: 560; }
+    .cell-sub { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chevron { color: var(--tertiary); font-size: 22px; font-weight: 300; }
+    .badge { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 8px; border-radius: 999px; font-size: 11px; color: var(--primary); background: var(--primary-soft); }
+
+    .primary-btn, .secondary-btn, .danger-btn {
+      width: 100%; min-height: 50px; padding: 13px 18px; border-radius: 14px; border: 0;
+      font-size: 16px; font-weight: 620; cursor: pointer; transition: transform calc(120ms * var(--motion-scale)) ease, opacity .15s ease;
+    }
+    .primary-btn { background: var(--primary); color: #fff; }
+    .secondary-btn { background: var(--surface-2); color: var(--fg); }
+    .danger-btn { background: color-mix(in srgb, var(--danger) 12%, var(--surface)); color: var(--danger); }
+    .primary-btn:active, .secondary-btn:active { transform: scale(.985); }
+    .primary-btn:disabled { opacity: .35; cursor: default; }
+
+    .tabbar {
+      position: relative;
+      z-index: 12;
+      flex: 0 0 70px;
+      display: grid;
+      grid-template-columns: 1fr 76px 1fr;
+      align-items: start;
+      padding: 7px 28px 0;
+      border-top: 1px solid var(--separator);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(24px) saturate(1.3);
+    }
+    .tab {
+      min-height: 50px; padding: 4px 0; border: 0; background: transparent; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; cursor: pointer;
+    }
+    .tab.active { color: var(--primary); }
+    .plus-btn {
+      width: 54px; height: 54px; margin: -15px auto 0; border-radius: 50%; border: 5px solid var(--bg);
+      background: var(--primary); color: white; display: grid; place-items: center; box-shadow: 0 8px 18px color-mix(in srgb, var(--primary) 24%, transparent); cursor: pointer;
+    }
+    .plus-btn svg { width: 25px; height: 25px; stroke: currentColor; stroke-width: 2.3; }
+    .home-indicator { position: relative; flex: 0 0 22px; background: color-mix(in srgb, var(--surface) 90%, transparent); }
+    .home-indicator::after { content: ""; position: absolute; left: 50%; bottom: 7px; width: 134px; height: 5px; transform: translateX(-50%); border-radius: 999px; background: var(--fg); opacity: .85; }
+
+    .nav-bar { min-height: 48px; padding: 2px 12px 4px; display: grid; grid-template-columns: 64px 1fr 64px; align-items: center; }
+    .nav-title { text-align: center; font-size: 17px; font-weight: 620; }
+    .nav-btn { min-height: 44px; padding: 0 8px; border: 0; background: transparent; color: var(--accent); display: inline-flex; align-items: center; justify-content: flex-start; gap: 3px; cursor: pointer; }
+    .nav-btn.trailing { justify-content: flex-end; }
+
+    .sheet-backdrop, .modal-backdrop {
+      position: absolute; inset: 0; z-index: 40; display: none; background: rgba(0,0,0,.22);
+    }
+    .sheet-backdrop.open, .modal-backdrop.open { display: block; }
+    .sheet {
+      position: absolute; z-index: 41; left: 0; right: 0; bottom: 0; height: 76%;
+      border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; background: var(--bg);
+      transform: translateY(102%); transition: transform calc(320ms * var(--motion-scale)) cubic-bezier(.2,.8,.2,1);
+      display: flex; flex-direction: column; box-shadow: 0 -18px 50px rgba(0,0,0,.16);
+    }
+    .sheet.open { transform: translateY(0); }
+    .grabber { width: 36px; height: 5px; border-radius: 999px; margin: 8px auto 6px; background: var(--tertiary); }
+    .sheet-head { padding: 2px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+    .sheet-head h2 { margin: 0; font-size: 20px; }
+    .close-btn { width: 32px; height: 32px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--fg) 8%, transparent); color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+    .search { margin: 0 16px 10px; min-height: 38px; padding: 8px 12px 8px 36px; width: calc(100% - 32px); border: 0; border-radius: 11px; background: color-mix(in srgb, var(--fg) 7%, transparent); color: var(--fg); font-size: 15px; }
+    .search-wrap { position: relative; }
+    .search-icon { position: absolute; left: 27px; top: 10px; z-index: 1; color: var(--muted); }
+    .filter-strip { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 10px; scrollbar-width: none; }
+    .filter-strip::-webkit-scrollbar { display: none; }
+    .exercise-list { flex: 1; overflow-y: auto; padding: 0 16px 128px; }
+    .exercise-row { min-height: 60px; padding: 10px 4px; border: 0; border-bottom: 1px solid var(--separator); background: transparent; width: 100%; display: grid; grid-template-columns: 1fr 34px; align-items: center; text-align: left; cursor: pointer; }
+    .exercise-row .sub { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .check-icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--separator); color: transparent; }
+    .exercise-row.selected .check-icon { border-color: var(--primary); background: var(--primary); color: white; }
+    .custom-entry {
+      width: 100%; min-height: 58px; margin-top: 10px; padding: 10px 4px; border: 0; border-top: 1px solid var(--separator);
+      display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 10px;
+      background: transparent; color: var(--accent); text-align: left; cursor: pointer;
+    }
+    .custom-entry-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); font-size: 22px; }
+    .custom-entry strong { display: block; font-size: 15px; font-weight: 600; }
+    .custom-entry span span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .custom-badge { display: inline-flex; margin-left: 4px; padding: 2px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 10px; font-weight: 600; vertical-align: 1px; }
+    .no-results { padding: 34px 18px 12px; text-align: center; }
+    .no-results-symbol { width: 58px; height: 58px; margin: 0 auto 14px; border-radius: 18px; display: grid; place-items: center; background: var(--surface-2); color: var(--muted); }
+    .no-results-symbol svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+    .no-results h3 { margin-bottom: 5px; }
+    .no-results p { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .selection-dock { position: absolute; left: 12px; right: 12px; bottom: 10px; padding: 10px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0,0,0,.14); }
+    .selection-meta { display: flex; justify-content: space-between; margin: 0 4px 8px; font-size: 12px; color: var(--muted); }
+    .custom-exercise-sheet { height: 88%; z-index: 43; }
+    .custom-form-scroll { flex: 1; overflow-y: auto; padding: 2px 16px 116px; }
+    .form-section-label { margin: 18px 4px 7px; color: var(--muted); font-size: 12px; letter-spacing: .02em; }
+    .custom-form-row { min-height: 56px; padding: 8px 14px; display: grid; grid-template-columns: 118px minmax(0,1fr); align-items: center; gap: 10px; border-bottom: 1px solid var(--separator); }
+    .custom-form-row:last-child { border-bottom: 0; }
+    .custom-form-row label { font-size: 15px; }
+    .custom-form-row .required::after { content: " · 必填"; color: var(--danger); font-size: 11px; }
+    .custom-form-row input, .custom-form-row select {
+      width: 100%; min-height: 40px; padding: 6px 0; border: 0; background: transparent; color: var(--accent); text-align: right; outline-offset: 0;
+    }
+    .custom-form-row select { appearance: auto; }
+    .rep-range { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; color: var(--muted); }
+    .rep-range input { text-align: center; border-radius: 8px; background: var(--surface-2); color: var(--fg); }
+    .form-help { margin: 8px 4px 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .custom-form-error { min-height: 20px; margin: 10px 4px 0; color: var(--danger); font-size: 12px; line-height: 1.4; }
+    .custom-form-dock { position: absolute; left: 12px; right: 12px; bottom: 10px; padding: 10px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 95%, transparent); backdrop-filter: blur(20px); box-shadow: 0 10px 30px rgba(0,0,0,.14); }
+
+    .workout-hero { padding: 16px 20px 12px; }
+    .progress-line { height: 5px; margin-bottom: 16px; border-radius: 999px; background: var(--separator); overflow: hidden; }
+    .progress-line span { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width .3s ease; }
+    .workout-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .counter-pill { min-width: 48px; padding: 6px 10px; border-radius: 999px; background: var(--surface-2); color: var(--muted); text-align: center; font-size: 13px; }
+    .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+    .context-box { padding: 12px; border-radius: 13px; background: var(--surface); }
+    .context-box strong { display: block; margin-top: 5px; font-size: 15px; }
+    .set-table { overflow: hidden; border-radius: var(--card-radius); background: var(--surface); }
+    .set-head, .set-row { display: grid; grid-template-columns: 38px 1fr 1fr 48px; gap: 8px; align-items: center; }
+    .set-head { min-height: 36px; padding: 0 12px; color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+    .set-row { min-height: 64px; padding: 8px 12px; border-top: 1px solid var(--separator); }
+    .set-index { font-size: 14px; color: var(--muted); text-align: center; }
+    .set-value-btn {
+      width: 100%; min-height: 44px; padding: 7px 6px; border: 0; border-radius: 10px;
+      background: var(--surface-2); color: var(--fg); text-align: center; font-size: 17px;
+      font-variant-numeric: tabular-nums; cursor: pointer;
+    }
+    .set-value-btn:active { background: color-mix(in srgb, var(--fg) 11%, transparent); }
+    .set-done { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--surface-2); color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+    .set-row.completed .set-done { background: var(--primary); color: white; animation: pop calc(360ms * var(--motion-scale)) cubic-bezier(.2,.9,.3,1.3); }
+    .set-row.completed .set-value-btn { color: var(--muted); }
+    .set-editor { height: 55%; }
+    .editor-body { padding: 2px 16px 18px; overflow-y: auto; }
+    .editor-context { margin: 2px 4px 16px; color: var(--muted); font-size: 13px; text-align: center; }
+    .editor-value-control { display: grid; grid-template-columns: 60px 1fr 60px; align-items: center; gap: 10px; }
+    .editor-adjust {
+      width: 60px; height: 60px; border: 0; border-radius: 50%; display: grid; place-items: center;
+      background: var(--surface-2); color: var(--accent); font-size: 31px; font-weight: 350; cursor: pointer;
+    }
+    .editor-value-wrap { min-width: 0; display: flex; align-items: baseline; justify-content: center; gap: 6px; }
+    .editor-input {
+      width: 116px; min-height: 64px; padding: 4px; border: 0; border-bottom: 2px solid var(--accent);
+      background: transparent; color: var(--fg); text-align: right; font-size: 38px; font-weight: 650;
+      letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+    }
+    .editor-unit { color: var(--muted); font-size: 15px; }
+    .editor-error { min-height: 20px; margin: 7px 4px 0; color: var(--danger); font-size: 12px; text-align: center; }
+    .step-block { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); }
+    .step-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; color: var(--muted); font-size: 12px; }
+    .step-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .step-option { min-height: 40px; border: 0; border-radius: 10px; background: var(--surface-2); color: var(--fg); font-size: 14px; cursor: pointer; }
+    .step-option.active { background: var(--fg); color: var(--surface); }
+    .editor-hint { margin: 12px 4px 16px; color: var(--muted); font-size: 12px; line-height: 1.45; text-align: center; }
+    .editor-actions { display: grid; grid-template-columns: 1fr 1.35fr; gap: 9px; }
+    @keyframes pop { 0% { transform: scale(.72); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }
+    .workout-actions { padding: 12px 20px 14px; display: grid; gap: 9px; border-top: 1px solid var(--separator); background: color-mix(in srgb, var(--bg) 94%, transparent); backdrop-filter: blur(20px); }
+
+    .celebration { position: relative; height: 100%; overflow: hidden; padding: 44px 24px 24px; display: flex; flex-direction: column; text-align: center; background: var(--fg); color: var(--surface); }
+    .celebration::before, .celebration::after { content: ""; position: absolute; border: 1px solid color-mix(in srgb, var(--primary) 70%, transparent); border-radius: 50%; animation: ripple calc(1.8s * var(--motion-scale)) ease-out infinite; }
+    .celebration::before { width: 220px; height: 220px; top: 140px; left: 86px; }
+    .celebration::after { width: 320px; height: 320px; top: 90px; left: 36px; animation-delay: .45s; }
+    @keyframes ripple { from { transform: scale(.4); opacity: .85; } to { transform: scale(1.3); opacity: 0; } }
+    .medal { position: relative; z-index: 1; width: 86px; height: 86px; margin: 60px auto 30px; border-radius: 50%; display: grid; place-items: center; background: var(--primary); box-shadow: 0 0 0 12px color-mix(in srgb, var(--primary) 18%, transparent); }
+    .medal svg { width: 42px; height: 42px; stroke: white; fill: none; stroke-width: 1.8; }
+    .celebration h1 { position: relative; z-index: 1; font-size: 36px; color: white; }
+    .celebration .big-result { position: relative; z-index: 1; margin-top: 14px; font-size: 30px; font-weight: 650; color: white; }
+    .celebration .support { position: relative; z-index: 1; margin-top: 8px; color: rgba(255,255,255,.68); line-height: 1.5; }
+    .celebration .weekly { position: relative; z-index: 1; margin-top: 34px; padding: 16px; border-radius: 18px; background: rgba(255,255,255,.09); display: flex; justify-content: space-between; align-items: center; text-align: left; }
+    .celebration .primary-btn { position: relative; z-index: 1; margin-top: auto; background: white; color: #171719; }
+
+    .timeline-month { position: sticky; top: 0; z-index: 2; padding: 12px 0 8px; background: var(--bg); color: var(--muted); font-size: 13px; font-weight: 600; }
+    .record-card { position: relative; margin-left: 18px; padding: 16px; border-radius: var(--card-radius); background: var(--surface); }
+    .record-card::before { content: ""; position: absolute; left: -19px; top: 24px; width: 9px; height: 9px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 4px var(--bg); }
+    .record-card::after { content: ""; position: absolute; left: -15px; top: 33px; bottom: -24px; width: 1px; background: var(--separator); }
+    .record-card.last::after { display: none; }
+    .record-meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+    .record-card h3 { margin-top: 8px; }
+    .exercise-summary { margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .record-foot { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+
+    .detail-section { margin-top: 22px; }
+    .detail-section h2 { padding: 0 4px; }
+    .sets-summary { width: 100%; border-collapse: collapse; }
+    .sets-summary th, .sets-summary td { padding: 10px 14px; text-align: right; border-bottom: 1px solid var(--separator); font-size: 13px; }
+    .sets-summary th:first-child, .sets-summary td:first-child { text-align: left; }
+    .sets-summary th { color: var(--muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+    .sets-summary tr:last-child td { border-bottom: 0; }
+
+    .form-row { min-height: 56px; padding: 8px 16px; display: grid; grid-template-columns: 1fr auto; align-items: center; border-bottom: 1px solid var(--separator); }
+    .form-row:last-child { border-bottom: 0; }
+    .form-row label { font-size: 15px; }
+    .form-row input, .form-row select { min-height: 40px; max-width: 174px; border: 0; background: transparent; color: var(--accent); text-align: right; }
+    .energy { padding: 18px 16px; }
+    .energy .value { margin-top: 6px; font-size: 28px; font-weight: 650; }
+
+    .empty-state { min-height: 520px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 36px 28px; }
+    .empty-symbol { width: 84px; height: 84px; border-radius: 24px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); margin-bottom: 22px; }
+    .empty-symbol svg { width: 42px; height: 42px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+    .empty-state h2 { font-size: 25px; }
+    .empty-state p { max-width: 28ch; color: var(--muted); line-height: 1.5; }
+    .empty-state .primary-btn { margin-top: 24px; max-width: 260px; }
+
+    .modal-backdrop { z-index: 60; display: none; place-items: center; padding: 22px; }
+    .modal-backdrop.open { display: grid; }
+    .alert { width: 286px; overflow: hidden; border-radius: 14px; background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(28px); box-shadow: 0 20px 60px rgba(0,0,0,.24); text-align: center; }
+    .alert-copy { padding: 20px 18px 16px; }
+    .alert-copy h3 { font-size: 17px; }
+    .alert-copy p { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .alert-actions { border-top: 1px solid var(--separator); display: grid; grid-template-columns: 1fr 1fr; }
+    .alert-actions button { min-height: 48px; border: 0; border-left: 1px solid var(--separator); background: transparent; color: var(--accent); cursor: pointer; }
+    .alert-actions button:first-child { border-left: 0; }
+    .alert-actions .destructive { color: var(--danger); }
+    .toast { position: absolute; z-index: 80; left: 50%; bottom: 94px; transform: translate(-50%, 24px); opacity: 0; pointer-events: none; padding: 10px 14px; border-radius: 999px; background: color-mix(in srgb, var(--fg) 90%, transparent); color: var(--surface); font-size: 13px; white-space: nowrap; transition: .25s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .brand-replay { background: var(--primary-soft); color: var(--primary); }
+    .brand-replay svg { width: 26px; height: 26px; }
+
+    .launch-screen {
+      position: absolute; inset: 0; z-index: 120; display: grid; place-items: center;
+      overflow: hidden; border: 0; padding: 0; background: var(--bg); color: var(--fg);
+      text-align: center; cursor: pointer; opacity: 1; transform: scale(1);
+      transition: opacity calc(300ms * var(--motion-scale)) ease, transform calc(300ms * var(--motion-scale)) ease;
+    }
+    .launch-screen::before {
+      content: ""; position: absolute; width: 300px; height: 300px; border-radius: 50%;
+      background: color-mix(in srgb, var(--primary) 10%, transparent); opacity: .72; transform: scale(.55);
+    }
+    .launch-screen.leaving { opacity: 0; transform: scale(1.018); pointer-events: none; }
+    .launch-screen.hidden { display: none; }
+    .launch-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; transform: translateY(-10px); }
+    .launch-icon {
+      width: 124px; height: 124px; border-radius: 30px; display: grid; place-items: center;
+      background: var(--primary); box-shadow: 0 22px 54px color-mix(in srgb, var(--primary) 25%, transparent), inset 0 1px rgba(255,255,255,.18);
+      transform: scale(.88); opacity: 0;
+    }
+    .launch-icon svg { width: 100%; height: 100%; overflow: visible; }
+    .launch-logo-path {
+      fill: none; stroke: #fff; stroke-width: 88; stroke-linecap: round; stroke-linejoin: round;
+      stroke-dasharray: 1700; stroke-dashoffset: 1700;
+    }
+    .launch-progress-dot { fill: #64d2ff; opacity: 0; transform-origin: 748px 286px; transform: scale(.2); }
+    .launch-wordmark { margin-top: 26px; font-size: 31px; line-height: 1; font-weight: 720; letter-spacing: -.035em; opacity: 0; transform: translateY(8px); }
+    .launch-tagline { margin-top: 9px; color: var(--muted); font-size: 13px; font-weight: 520; letter-spacing: .02em; opacity: 0; transform: translateY(6px); }
+    .launch-skip { position: absolute; left: 0; right: 0; bottom: 42px; color: var(--muted); font-size: 12px; letter-spacing: .02em; opacity: 0; }
+    .launch-screen.playing .launch-icon { animation: launchIconIn calc(520ms * var(--motion-scale)) cubic-bezier(.2,.85,.24,1.14) 60ms forwards; }
+    .launch-screen.playing .launch-logo-path { animation: launchLogoDraw calc(720ms * var(--motion-scale)) cubic-bezier(.45,0,.2,1) 180ms forwards; }
+    .launch-screen.playing .launch-progress-dot { animation: launchDotIn calc(360ms * var(--motion-scale)) cubic-bezier(.2,.9,.3,1.35) 760ms forwards; }
+    .launch-screen.playing .launch-wordmark { animation: launchCopyIn calc(380ms * var(--motion-scale)) ease 770ms forwards; }
+    .launch-screen.playing .launch-tagline { animation: launchCopyIn calc(380ms * var(--motion-scale)) ease 880ms forwards; }
+    .launch-screen.playing .launch-skip { animation: launchFadeIn calc(240ms * var(--motion-scale)) ease 920ms forwards; }
+    @keyframes launchIconIn { to { opacity: 1; transform: scale(1); } }
+    @keyframes launchLogoDraw { to { stroke-dashoffset: 0; } }
+    @keyframes launchDotIn { to { opacity: 1; transform: scale(1); } }
+    @keyframes launchCopyIn { to { opacity: 1; transform: translateY(0); } }
+    @keyframes launchFadeIn { to { opacity: 1; } }
+
+    @media (max-width: 455px), (max-height: 930px) {
+      body { padding: 8px; place-items: start center; }
+      .caption { display: none; }
+      .device { transform: scale(min(calc((100vw - 16px) / 417), calc((100vh - 16px) / 876))); transform-origin: top center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      :root { --motion-scale: 0; }
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      .launch-icon { opacity: 1; transform: none; }
+      .launch-logo-path { stroke-dashoffset: 0; }
+      .launch-progress-dot, .launch-wordmark, .launch-tagline, .launch-skip { opacity: 1; transform: none; }
+      .launch-screen::before { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="caption"><strong>Lean Fit</strong> · iOS 高保真交互原型</div>
+    <div class="device" data-component="iPhone 15 Pro Frame" data-od-id="device">
+      <span class="rail l1" aria-hidden="true"></span><span class="rail l2" aria-hidden="true"></span><span class="rail l3" aria-hidden="true"></span><span class="rail r1" aria-hidden="true"></span>
+      <span class="island" aria-hidden="true"></span>
+      <div class="screen">
+        <button class="launch-screen" id="launchScreen" type="button" aria-label="Lean Fit 正在启动，点按跳过" data-component="Lean Fit Launch Experience" data-od-id="launch-screen">
+          <span class="launch-content">
+            <span class="launch-icon" aria-hidden="true">
+              <svg viewBox="0 0 1024 1024">
+                <path class="launch-logo-path" d="M304 286V704H452L570 586V286H748M570 470H696"/>
+                <circle class="launch-progress-dot" cx="748" cy="286" r="26"/>
+              </svg>
+            </span>
+            <span class="launch-wordmark">Lean Fit</span>
+            <span class="launch-tagline">记录每一次，稳步变强</span>
+          </span>
+          <span class="launch-skip">点按跳过</span>
+        </button>
+        <div class="statusbar" data-component="iOS Status Bar">
+          <span class="num">9:41</span>
+          <span class="right">
+            <svg viewBox="0 0 17 11" aria-hidden="true"><rect x="0" y="7" width="3" height="4" rx=".6"/><rect x="4" y="5" width="3" height="6" rx=".6"/><rect x="8" y="3" width="3" height="8" rx=".6"/><rect x="12" width="3" height="11" rx=".6"/></svg>
+            <svg viewBox="0 0 17 11" aria-hidden="true"><path d="M8.5 1.5C5.5 1.5 2.7 2.6.5 4.6L2 6.1c1.8-1.6 4.1-2.5 6.5-2.5s4.7.9 6.5 2.5l1.5-1.5c-2.2-2-5-3.1-8-3.1ZM3.5 7.6 5 9.1c1-.9 2.2-1.4 3.5-1.4s2.5.5 3.5 1.4l1.5-1.5c-1.4-1.3-3.1-2-5-2s-3.6.7-5 2Zm3 3 2 2 2-2a2.8 2.8 0 0 0-4 0Z"/></svg>
+            <svg class="battery" viewBox="0 0 25 11" aria-hidden="true"><rect x=".5" y=".5" width="21" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-opacity=".45"/><rect x="22" y="3.5" width="1.5" height="4" rx=".4" fill="currentColor" fill-opacity=".45"/><rect x="2" y="2" width="18" height="7" rx="1.4"/></svg>
+          </span>
+        </div>
+
+        <div class="app-root" id="appRoot" data-component="Lean Fit App">
+          <section class="view active" id="progressView" data-component="Progress Dashboard" data-od-id="progress-view">
+            <div class="scroll">
+              <header class="large-header" data-component="Progress Header">
+                <h1>进展</h1>
+                <div class="header-actions">
+                  <button class="icon-btn brand-replay" aria-label="重播 Lean Fit 开屏动画" data-action="replay-launch">
+                    <svg viewBox="0 0 1024 1024" aria-hidden="true"><path d="M304 286V704H452L570 586V286H748M570 470H696" stroke="currentColor" stroke-width="96" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="748" cy="286" r="36" fill="#64d2ff" stroke="none"/></svg>
+                  </button>
+                  <button class="icon-btn" aria-label="打开个人档案" data-action="profile"><span class="profile-dot">LF</span></button>
+                </div>
+              </header>
+              <main class="content">
+                <section data-component="Trend Summary" data-od-id="trend-summary">
+                  <div class="segmented" aria-label="趋势指标">
+                    <button class="metric-tab active" data-metric="weight">体重</button>
+                    <button class="metric-tab" data-metric="fat">体脂</button>
+                    <button class="metric-tab" data-metric="strength">力量</button>
+                  </div>
+                  <div class="group pad" style="margin-top:10px;">
+                    <div class="metric-row">
+                      <div>
+                        <div class="caption-text" id="metricLabel">最近体重</div>
+                        <div class="metric num" id="metricValue">72.4 kg</div>
+                      </div>
+                      <span class="delta num" id="metricDelta">4 周 −0.8 kg</span>
+                    </div>
+                    <button class="chart" id="trendChart" aria-label="打开体重趋势详情" data-action="trend" style="width:100%;border:0;background:transparent;padding:0;cursor:pointer;">
+                      <svg viewBox="0 0 320 128" role="img" aria-label="最近四周体重缓慢下降趋势">
+                        <path class="chart-grid" d="M0 26H320M0 64H320M0 102H320"/>
+                        <path class="chart-area" d="M6 34 C42 30 62 48 94 44 S146 58 174 62 S226 72 254 78 S290 76 314 91 L314 118 L6 118Z"/>
+                        <path class="chart-line" d="M6 34 C42 30 62 48 94 44 S146 58 174 62 S226 72 254 78 S290 76 314 91"/>
+                        <circle class="chart-dot" cx="314" cy="91" r="4"/>
+                      </svg>
+                    </button>
+                    <div class="time-range" aria-label="时间范围">
+                      <button class="active">4 周</button><button>3 个月</button><button>1 年</button>
+                    </div>
+                    <button class="link-button" data-action="body-update">更新体重与体脂</button>
+                  </div>
+                </section>
+
+                <section class="section" data-component="Weekly Training" data-od-id="weekly-training">
+                  <div class="section-head"><h2>本周训练</h2><span class="caption-text">目标 3 次</span></div>
+                  <div class="group week">
+                    <div class="week-top"><strong>本周 <span class="num" id="weekCount">2/3</span> 次</strong><span class="badge">保持节奏</span></div>
+                    <div class="week-days">
+                      <div class="day done">一<span>25</span></div><div class="day">二<span>26</span></div><div class="day done">三<span>27</span></div><div class="day today">四<span>28</span></div><div class="day">五<span>29</span></div><div class="day">六<span>30</span></div><div class="day">日<span>31</span></div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="section" data-component="Recent Workouts" data-od-id="recent-workouts">
+                  <div class="section-head"><h2>近期训练</h2><button class="link-button" data-action="records">查看全部</button></div>
+                  <div class="group">
+                    <button class="list-cell" data-action="record-detail">
+                      <span class="cell-icon"><svg viewBox="0 0 24 24"><path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/></svg></span>
+                      <span><span class="cell-title">胸 · 肩</span><span class="cell-sub">杠铃卧推、上斜卧推等 4 个动作</span></span>
+                      <span><span class="badge">重量突破</span><span class="cell-sub num" style="display:block;text-align:right;">8月27日</span></span>
+                    </button>
+                    <button class="list-cell" data-action="record-detail">
+                      <span class="cell-icon"><svg viewBox="0 0 24 24"><path d="M7 4v16M17 4v16M4 7h16M4 17h16"/></svg></span>
+                      <span><span class="cell-title">背</span><span class="cell-sub">高位下拉、坐姿划船等 4 个动作</span></span>
+                      <span><span class="cell-title num" style="text-align:right;">14 组</span><span class="cell-sub num" style="display:block;text-align:right;">8月25日</span></span>
+                    </button>
+                  </div>
+                </section>
+              </main>
+            </div>
+            <nav class="tabbar" data-component="Primary Tab Bar" aria-label="主导航">
+              <button class="tab active" data-action="progress"><svg viewBox="0 0 24 24"><path d="M4 18V9M10 18V5M16 18v-7M22 18V3"/></svg><span>进展</span></button>
+              <button class="plus-btn" data-action="open-exercise-sheet" aria-label="开始训练"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="tab" data-action="records"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/></svg><span>记录</span></button>
+            </nav>
+          </section>
+
+          <section class="view" id="workoutView" data-component="Active Workout" data-od-id="workout-view">
+            <header class="nav-bar"><button class="nav-btn" data-action="workout-overview">动作</button><div class="nav-title">训练中</div><button class="nav-btn trailing" data-action="finish-workout">结束</button></header>
+            <div class="scroll">
+              <div class="workout-hero">
+                <div class="progress-line"><span id="workoutProgress" style="width:25%"></span></div>
+                <div class="workout-title-row"><div><div class="caption-text" id="exerciseCounter">动作 1/4</div><h1 id="currentExerciseName" style="font-size:30px;margin-top:3px;">杠铃卧推</h1></div><span class="counter-pill num" id="setCounter">0/4 组</span></div>
+                <div class="context-grid">
+                  <div class="context-box"><span class="caption-text">上次表现</span><strong class="num" id="lastPerformance">60 kg × 8</strong></div>
+                  <div class="context-box"><span class="caption-text">本次目标</span><strong class="num" id="targetPerformance">60 kg × 9</strong></div>
+                </div>
+              </div>
+              <main class="content">
+                <section data-component="Set Recorder" data-od-id="set-recorder">
+                  <div class="section-head"><h2>工作组</h2><button class="link-button" id="addSetBtn">添加一组</button></div>
+                  <div class="set-table" id="setTable">
+                    <div class="set-head"><span>组</span><span style="text-align:center">重量 kg</span><span style="text-align:center">次数</span><span></span></div>
+                  </div>
+                  <p class="caption-text" style="margin:10px 4px 0;">点按重量或次数快速修改；已完成的组仍可编辑并重新计算结果。</p>
+                </section>
+              </main>
+            </div>
+            <div class="workout-actions"><button class="primary-btn" id="completeExerciseBtn">完成当前动作</button><button class="secondary-btn" data-action="workout-overview">查看其他动作</button></div>
+          </section>
+
+          <section class="view" id="workoutOverviewView" data-component="Workout Exercise Overview" data-od-id="workout-overview-view">
+            <header class="nav-bar"><button class="nav-btn" data-action="back-workout">‹ 返回</button><div class="nav-title">今日训练</div><button class="nav-btn trailing" data-action="finish-workout">结束</button></header>
+            <div class="scroll"><main class="content">
+              <div class="group" id="workoutExerciseList"></div>
+              <p class="caption-text" style="margin:12px 4px 0;">至少完成一组后，动作才可标记完成。未完成动作结束时会标记为跳过。</p>
+            </main></div>
+          </section>
+
+          <section class="view" id="celebrationView" data-component="Workout Celebration" data-od-id="celebration-view">
+            <main class="celebration">
+              <div class="medal"><svg viewBox="0 0 24 24"><path d="m8 3 4 7 4-7M12 10a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/><path d="m10 16 1.3 1.3L14 14.5"/></svg></div>
+              <h1>卧推突破</h1><div class="big-result num">62.5 kg × 8</div><p class="support">比上次增加 2.5 kg<br>这是一次真实的重量突破</p>
+              <div class="weekly"><div><strong>本周第 3 次训练完成</strong><div style="margin-top:4px;color:rgba(255,255,255,.62);font-size:13px;">本周目标已达成</div></div><span class="num" style="font-size:24px;font-weight:650;">3/3</span></div>
+              <button class="primary-btn" data-action="celebration-done">完成</button>
+            </main>
+          </section>
+
+          <section class="view" id="recordsView" data-component="Workout Timeline" data-od-id="records-view">
+            <div class="scroll">
+              <header class="large-header"><h1>记录</h1><button class="icon-btn" aria-label="手动打卡" data-action="manual-checkin"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></header>
+              <main class="content">
+                <div class="timeline-month">2026 年 8 月</div>
+                <button class="record-card" data-action="record-detail" style="width:calc(100% - 18px);border:0;text-align:left;color:inherit;cursor:pointer;">
+                  <div class="record-meta"><span>8月27日 · 周四</span><span class="num">48 分钟</span></div><h3>胸 · 肩</h3><p class="exercise-summary">杠铃卧推 · 上斜哑铃卧推 · 哑铃侧平举 · 绳索夹胸</p><div class="record-foot"><span class="caption-text num">15 个有效组</span><span class="badge">重量突破</span></div>
+                </button>
+                <button class="record-card" data-action="record-detail" style="width:calc(100% - 18px);margin-top:16px;border:0;text-align:left;color:inherit;cursor:pointer;">
+                  <div class="record-meta"><span>8月25日 · 周二</span><span class="num">52 分钟</span></div><h3>背</h3><p class="exercise-summary">高位下拉 · 杠铃划船 · 坐姿划船 · 面拉</p><div class="record-foot"><span class="caption-text num">14 个有效组</span><span class="badge">训练量突破</span></div>
+                </button>
+                <button class="record-card last" style="width:calc(100% - 18px);margin-top:16px;border:0;text-align:left;color:inherit;">
+                  <div class="record-meta"><span>8月22日 · 周六</span><span>手动打卡</span></div><h3>腿</h3><p class="exercise-summary">在其他设备上完成训练</p><div class="record-foot"><span class="caption-text">计入本周训练日</span></div>
+                </button>
+              </main>
+            </div>
+            <nav class="tabbar" data-component="Primary Tab Bar" aria-label="主导航">
+              <button class="tab" data-action="progress"><svg viewBox="0 0 24 24"><path d="M4 18V9M10 18V5M16 18v-7M22 18V3"/></svg><span>进展</span></button>
+              <button class="plus-btn" data-action="open-exercise-sheet" aria-label="开始训练"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+              <button class="tab active"><svg viewBox="0 0 24 24"><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/></svg><span>记录</span></button>
+            </nav>
+          </section>
+
+          <section class="view" id="recordDetailView" data-component="Workout Record Detail" data-od-id="record-detail-view">
+            <header class="nav-bar"><button class="nav-btn" data-action="records">‹ 记录</button><div class="nav-title">训练详情</div><button class="nav-btn trailing" data-action="edit-record">编辑</button></header>
+            <div class="scroll"><main class="content">
+              <div style="padding:8px 4px 2px;"><h1 style="font-size:30px;">胸 · 肩</h1><p class="muted body-text" style="margin-top:6px;">8月27日 周四 · 18:32–19:20 · 48 分钟</p><div style="margin-top:12px;"><span class="badge">重量突破</span> <span class="badge">计入本周打卡</span></div></div>
+              <section class="detail-section" data-component="Exercise Detail Group"><h2>杠铃卧推</h2><div class="group"><table class="sets-summary"><thead><tr><th>组</th><th>重量</th><th>次数</th></tr></thead><tbody><tr><td>1</td><td class="num">60 kg</td><td class="num">10</td></tr><tr><td>2</td><td class="num">62.5 kg</td><td class="num">8</td></tr><tr><td>3</td><td class="num">62.5 kg</td><td class="num">8</td></tr><tr><td>4</td><td class="num">60 kg</td><td class="num">9</td></tr></tbody></table></div><p class="caption-text" style="margin:10px 4px 0;">上次最高 60 kg × 8 · 本次增加 2.5 kg</p></section>
+              <section class="detail-section" data-component="Exercise Detail Group"><h2>上斜哑铃卧推</h2><div class="group"><table class="sets-summary"><tbody><tr><td>1</td><td class="num">22.5 kg</td><td class="num">10</td></tr><tr><td>2</td><td class="num">22.5 kg</td><td class="num">9</td></tr><tr><td>3</td><td class="num">22.5 kg</td><td class="num">8</td></tr></tbody></table></div></section>
+              <section class="detail-section"><button class="danger-btn" data-action="delete-record">删除训练记录</button></section>
+            </main></div>
+          </section>
+
+          <section class="view" id="trendDetailView" data-component="Trend Detail" data-od-id="trend-detail-view">
+            <header class="nav-bar"><button class="nav-btn" data-action="progress">‹ 进展</button><div class="nav-title">体重趋势</div><span></span></header>
+            <div class="scroll"><main class="content">
+              <div class="segmented"><button class="active">4 周</button><button>3 个月</button><button>1 年</button></div>
+              <section style="padding:28px 4px 16px;"><div class="caption-text">最近记录 · 8月28日</div><div class="metric num" style="font-size:38px;margin-top:4px;">72.4 kg</div><div class="delta num" style="margin-top:5px;">较 4 周前 −0.8 kg</div></section>
+              <div class="group pad"><div class="chart" style="height:220px;"><svg viewBox="0 0 320 220" role="img" aria-label="四周体重趋势"><path class="chart-grid" d="M0 35H320M0 95H320M0 155H320M0 215H320"/><path class="chart-area" d="M8 46 C48 42 62 68 98 60 S150 82 185 91 S240 111 270 126 S300 124 314 148 L314 214H8Z"/><path class="chart-line" d="M8 46 C48 42 62 68 98 60 S150 82 185 91 S240 111 270 126 S300 124 314 148"/><circle class="chart-dot" cx="8" cy="46" r="4"/><circle class="chart-dot" cx="98" cy="60" r="4"/><circle class="chart-dot" cx="185" cy="91" r="4"/><circle class="chart-dot" cx="270" cy="126" r="4"/><circle class="chart-dot" cx="314" cy="148" r="4"/></svg></div><div class="record-meta"><span>8月1日</span><span>8月28日</span></div></div>
+              <section class="section"><div class="group"><div class="form-row"><span>周期最高</span><strong class="num">73.3 kg</strong></div><div class="form-row"><span>周期最低</span><strong class="num">72.4 kg</strong></div><div class="form-row"><span>记录次数</span><strong class="num">5 次</strong></div></div><p class="caption-text" style="margin:12px 4px 0;">趋势来自你的手动记录，仅用于观察变化。</p></section>
+            </main></div>
+          </section>
+
+          <section class="view" id="profileView" data-component="Personal Profile" data-od-id="profile-view">
+            <header class="nav-bar"><button class="nav-btn" data-action="progress">‹ 进展</button><div class="nav-title">个人档案</div><button class="nav-btn trailing" data-action="save-profile">完成</button></header>
+            <div class="scroll"><main class="content">
+              <section style="padding:14px 0 22px;text-align:center;"><div class="profile-dot" style="width:72px;height:72px;margin:auto;font-size:22px;">LF</div><h2 style="margin:12px 0 3px;">训练者</h2><p class="caption-text">数据仅保存在此设备</p></section>
+              <section data-component="Profile Fields"><h2>身体档案</h2><div class="group"><div class="form-row"><label for="birth">出生日期</label><input id="birth" value="1995-06-18" aria-label="出生日期" /></div><div class="form-row"><label for="sex">生理性别</label><select id="sex" aria-label="生理性别"><option>男性</option><option>女性</option></select></div><div class="form-row"><label for="height">身高</label><input id="height" value="178 cm" aria-label="身高" /></div><div class="form-row"><label for="activity">活动水平</label><select id="activity" aria-label="活动水平"><option>中等活动</option><option>轻度活动</option><option>高强度活动</option></select></div></div></section>
+              <section class="section" data-component="Weekly Goal"><h2>训练目标</h2><div class="group"><div class="form-row"><label for="weeklyGoal">每周目标</label><select id="weeklyGoal" aria-label="每周训练目标"><option>3 次</option><option>2 次</option><option>4 次</option><option>5 次</option></select></div></div></section>
+              <section class="section" data-component="Energy Estimate"><h2>能量估算</h2><div class="group energy"><div class="caption-text">预计每日消耗</div><div class="value num">约 2,350 kcal</div><p class="caption-text" style="margin-top:6px;">根据身体档案和活动水平估算，仅供参考。</p></div></section>
+              <section class="section" data-component="Prototype State Demos"><h2>原型状态</h2><div class="group"><button class="list-cell simple" data-action="empty"><span class="cell-title">查看首次空状态</span><span class="chevron">›</span></button><button class="list-cell simple" data-action="recovery"><span class="cell-title">查看训练草稿恢复</span><span class="chevron">›</span></button></div></section>
+              <section class="section"><h2>数据与隐私</h2><div class="group"><button class="list-cell simple" data-action="privacy-info"><span><span class="cell-title">本地数据</span><span class="cell-sub">不上传原始训练和身体数据</span></span><span class="chevron">›</span></button></div></section>
+            </main></div>
+          </section>
+
+          <section class="view" id="emptyView" data-component="First Use Empty State" data-od-id="empty-view">
+            <header class="nav-bar"><button class="nav-btn" data-action="profile">‹ 档案</button><div class="nav-title">首次使用</div><span></span></header>
+            <main class="empty-state"><div class="empty-symbol"><svg viewBox="0 0 24 24"><path d="M4 18V9M10 18V5M16 18v-7M22 18V3"/><path d="M3 21h20"/></svg></div><h2>从第一次训练开始</h2><p>选四个动作，记录每组重量和次数。下次训练时，我们会把上次表现带回来。</p><button class="primary-btn" data-action="open-exercise-sheet">选择动作</button></main>
+          </section>
+
+          <div class="sheet-backdrop" id="sheetBackdrop" data-action="close-sheet"></div>
+          <section class="sheet" id="exerciseSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" data-component="Exercise Selection Sheet" data-od-id="exercise-sheet">
+            <div class="grabber" aria-hidden="true"></div><div class="sheet-head"><h2 id="sheetTitle">选择四个动作</h2><button class="close-btn" data-action="close-sheet" aria-label="关闭">×</button></div>
+            <div class="search-wrap"><span class="search-icon">⌕</span><input class="search" id="exerciseSearch" type="search" placeholder="搜索动作或别名" aria-label="搜索动作或别名" /></div>
+            <div class="filter-strip" id="filterStrip" aria-label="动作部位筛选"></div><div class="exercise-list" id="exerciseList" data-component="Exercise Results"></div>
+            <div class="selection-dock"><div class="selection-meta"><span id="selectionCount">已选 0/4</span><span id="selectionNames">请选择四个不重复动作</span></div><button class="primary-btn" id="startWorkoutBtn" disabled>开始训练</button></div>
+          </section>
+
+          <section class="sheet custom-exercise-sheet" id="customExerciseSheet" role="dialog" aria-modal="true" aria-labelledby="customExerciseTitle" data-component="Custom Exercise Form" data-od-id="custom-exercise-sheet">
+            <div class="grabber" aria-hidden="true"></div>
+            <div class="sheet-head"><button class="text-button" data-action="close-custom-exercise">取消</button><h2 id="customExerciseTitle">创建自定义动作</h2><span style="width:44px"></span></div>
+            <div class="custom-form-scroll">
+              <p class="form-section-label">基本信息</p>
+              <div class="group">
+                <div class="custom-form-row"><label class="required" for="customName">动作名称</label><input id="customName" maxlength="24" placeholder="例如：地雷管推举" aria-label="自定义动作名称" /></div>
+                <div class="custom-form-row"><label for="customAlias">别名</label><input id="customAlias" maxlength="24" placeholder="选填，便于搜索" aria-label="动作别名" /></div>
+                <div class="custom-form-row"><label class="required" for="customPart">主要部位</label><select id="customPart" aria-label="主要训练部位"><option>胸</option><option>背</option><option>腿</option><option>肩</option><option>手臂</option><option>核心</option><option>其他</option></select></div>
+                <div class="custom-form-row"><label for="customEquipment">器械</label><select id="customEquipment" aria-label="器械类型"><option>杠铃</option><option>哑铃</option><option>固定器械</option><option>绳索</option><option>徒手</option><option>其他</option></select></div>
+              </div>
+
+              <p class="form-section-label">记录方式</p>
+              <div class="group">
+                <div class="custom-form-row"><label class="required" for="customLoadType">负重类型</label><select id="customLoadType" aria-label="负重类型"><option value="normal">普通负重</option><option value="bodyweight">自重动作</option><option value="assisted">辅助动作</option></select></div>
+                <div class="custom-form-row"><label class="required">默认次数</label><div class="rep-range"><input id="customRepMin" inputmode="numeric" value="8" aria-label="默认最低次数" /><span>–</span><input id="customRepMax" inputmode="numeric" value="12" aria-label="默认最高次数" /></div></div>
+                <div class="custom-form-row" id="customIncrementRow"><label class="required" for="customIncrement">加重档位</label><select id="customIncrement" aria-label="默认加重档位"><option value="0.5">0.5 kg</option><option value="1">1 kg</option><option value="2.5" selected>2.5 kg</option><option value="5">5 kg</option></select></div>
+              </div>
+              <p class="form-help" id="customLoadHelp">普通负重动作以重量增加判断进步，并使用重量与次数计算训练量。</p>
+              <p class="custom-form-error" id="customExerciseError" role="status" aria-live="polite"></p>
+            </div>
+            <div class="custom-form-dock"><button class="primary-btn" data-action="save-custom-exercise">创建并选中</button></div>
+          </section>
+
+          <section class="sheet set-editor" id="setEditorSheet" role="dialog" aria-modal="true" aria-labelledby="setEditorTitle" data-component="Set Value Editor" data-od-id="set-editor-sheet">
+            <div class="grabber" aria-hidden="true"></div>
+            <div class="sheet-head"><h2 id="setEditorTitle">修改第 1 组重量</h2><button class="close-btn" data-action="close-set-editor" aria-label="关闭">×</button></div>
+            <div class="editor-body">
+              <p class="editor-context" id="editorContext">杠铃卧推 · 上次第 1 组 60 kg × 8</p>
+              <div class="editor-value-control">
+                <button class="editor-adjust" data-editor-adjust="-1" aria-label="减少">−</button>
+                <div class="editor-value-wrap"><input class="editor-input num" id="setEditorInput" inputmode="decimal" value="60" aria-label="重量数值" /><span class="editor-unit" id="setEditorUnit">kg</span></div>
+                <button class="editor-adjust" data-editor-adjust="1" aria-label="增加">＋</button>
+              </div>
+              <p class="editor-error" id="setEditorError" role="status" aria-live="polite"></p>
+              <div class="step-block" id="weightStepBlock">
+                <div class="step-head"><span>每次加减</span><span id="stepDescription">该动作默认 2.5 kg</span></div>
+                <div class="step-options" aria-label="重量加减档位"><button class="step-option" data-weight-step="0.5">0.5 kg</button><button class="step-option" data-weight-step="1">1 kg</button><button class="step-option active" data-weight-step="2.5">2.5 kg</button></div>
+              </div>
+              <p class="editor-hint" id="editorHint">重量支持一位小数；保存后会重新计算本次训练结果。</p>
+              <div class="editor-actions"><button class="secondary-btn" data-action="apply-set-following">同步后续组</button><button class="primary-btn" data-action="save-set-edit">保存</button></div>
+            </div>
+          </section>
+
+          <section class="sheet" id="bodySheet" role="dialog" aria-modal="true" aria-labelledby="bodySheetTitle" data-component="Body Measurement Sheet" data-od-id="body-sheet" style="height:52%;">
+            <div class="grabber"></div><div class="sheet-head"><h2 id="bodySheetTitle">更新身体数据</h2><button class="close-btn" data-action="close-body-sheet" aria-label="关闭">×</button></div>
+            <div style="padding:0 16px;"><div class="group"><div class="form-row"><label for="measureDate">日期</label><input id="measureDate" value="2026-08-28" aria-label="记录日期" /></div><div class="form-row"><label for="weightInput">体重</label><input id="weightInput" inputmode="decimal" value="72.4 kg" aria-label="体重" /></div><div class="form-row"><label for="fatInput">体脂（可选）</label><input id="fatInput" inputmode="decimal" value="18.6%" aria-label="体脂" /></div></div><p class="caption-text" style="margin:10px 4px 18px;">数据来源：手动录入。允许只更新其中一项。</p><button class="primary-btn" data-action="save-body">保存</button></div>
+          </section>
+
+          <div class="modal-backdrop" id="finishModal"><div class="alert" role="alertdialog" aria-labelledby="finishTitle"><div class="alert-copy"><h3 id="finishTitle">还有动作未完成</h3><p>未完成动作会标记为“跳过”，且不参与力量趋势计算。仍然结束本次训练吗？</p></div><div class="alert-actions"><button data-action="cancel-finish">继续训练</button><button class="destructive" data-action="confirm-finish">仍然结束</button></div></div></div>
+          <div class="modal-backdrop" id="recoveryModal"><div class="alert" role="alertdialog" aria-labelledby="recoveryTitle"><div class="alert-copy"><h3 id="recoveryTitle">发现未完成的训练</h3><p>今天 18:32 开始 · 胸与肩 · 已完成 5 组</p></div><div class="alert-actions"><button class="destructive" data-action="abandon-draft">放弃</button><button data-action="continue-draft">继续训练</button></div></div></div>
+          <div class="modal-backdrop" id="deleteModal"><div class="alert" role="alertdialog" aria-labelledby="deleteTitle"><div class="alert-copy"><h3 id="deleteTitle">删除这次训练？</h3><p>力量趋势和当周训练次数会重新计算。删除后可短暂撤销。</p></div><div class="alert-actions"><button data-action="cancel-delete">取消</button><button class="destructive" data-action="confirm-delete">删除</button></div></div></div>
+          <div class="toast" id="toast" role="status" aria-live="polite">已保存</div>
+        </div>
+        <div class="home-indicator" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const views = {
+      progress: document.getElementById('progressView'), workout: document.getElementById('workoutView'),
+      overview: document.getElementById('workoutOverviewView'), celebration: document.getElementById('celebrationView'),
+      records: document.getElementById('recordsView'), detail: document.getElementById('recordDetailView'),
+      trend: document.getElementById('trendDetailView'), profile: document.getElementById('profileView'), empty: document.getElementById('emptyView')
+    };
+    const exercises = [
+      {name:'杠铃卧推', part:'胸', last:'上次 60 kg × 8', target:'60 kg × 9'},
+      {name:'上斜哑铃卧推', part:'胸', last:'上次 22.5 kg × 10', target:'22.5 kg × 11'},
+      {name:'绳索夹胸', part:'胸', last:'上次 15 kg × 12', target:'17.5 kg × 8'},
+      {name:'双杠臂屈伸', part:'胸', last:'上次 自重 × 10', target:'自重 × 11'},
+      {name:'高位下拉', part:'背', last:'上次 55 kg × 10', target:'55 kg × 11'},
+      {name:'坐姿划船', part:'背', last:'上次 50 kg × 10', target:'52.5 kg × 8'},
+      {name:'杠铃划船', part:'背', last:'上次 45 kg × 8', target:'45 kg × 9'},
+      {name:'深蹲', part:'腿', last:'上次 80 kg × 8', target:'80 kg × 9'},
+      {name:'罗马尼亚硬拉', part:'腿', last:'上次 70 kg × 10', target:'72.5 kg × 8'},
+      {name:'腿举', part:'腿', last:'首次训练，建立基准', target:'完成 4 个有效组'},
+      {name:'哑铃肩推', part:'肩', last:'上次 18 kg × 9', target:'18 kg × 10'},
+      {name:'哑铃侧平举', part:'肩', last:'上次 8 kg × 12', target:'9 kg × 8'},
+      {name:'面拉', part:'肩', last:'上次 20 kg × 12', target:'22.5 kg × 8'}
+    ];
+    let selected = [];
+    let activeFilter = '最近使用';
+    let currentExercise = 0;
+    let workoutExercises = [];
+    let setRows = [];
+    let currentView = 'progress';
+    let previousTab = 'progress';
+    let editingSetIndex = null;
+    let editingField = 'weight';
+    let editorWeightStep = 2.5;
+    let launchExitTimer = null;
+    let launchHideTimer = null;
+
+    function showView(name) {
+      Object.values(views).forEach(v => v.classList.remove('active'));
+      views[name].classList.add('active');
+      currentView = name;
+      const scroller = views[name].querySelector('.scroll');
+      if (scroller) scroller.scrollTop = 0;
+    }
+    function showToast(message) {
+      const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show');
+      clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+    function finishLaunch(immediate = false) {
+      const launch = document.getElementById('launchScreen');
+      if (!launch || launch.classList.contains('hidden')) return;
+      clearTimeout(launchExitTimer);
+      clearTimeout(launchHideTimer);
+      launch.classList.add('leaving');
+      const exitDelay = immediate || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 20 : 280;
+      launchHideTimer = setTimeout(() => {
+        launch.classList.add('hidden');
+        launch.classList.remove('playing', 'leaving');
+        launch.setAttribute('aria-hidden', 'true');
+        document.getElementById('appRoot').setAttribute('tabindex', '-1');
+        document.getElementById('appRoot').focus({preventScroll:true});
+      }, exitDelay);
+    }
+    function playLaunch() {
+      const launch = document.getElementById('launchScreen');
+      if (!launch) return;
+      clearTimeout(launchExitTimer);
+      clearTimeout(launchHideTimer);
+      launch.classList.remove('hidden', 'playing', 'leaving');
+      launch.removeAttribute('aria-hidden');
+      void launch.offsetWidth;
+      requestAnimationFrame(() => launch.classList.add('playing'));
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      launchExitTimer = setTimeout(() => finishLaunch(false), reducedMotion ? 620 : 1580);
+    }
+    function iconCheck() { return '<svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"/></svg>'; }
+    function renderFilters() {
+      const filters = ['最近使用','胸','背','腿','肩'];
+      document.getElementById('filterStrip').innerHTML = filters.map(f => `<button class="chip ${f===activeFilter?'active':''}" data-filter="${f}">${f}</button>`).join('');
+    }
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>'"]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[character]));
+    }
+    function filteredExercises() {
+      const q = document.getElementById('exerciseSearch').value.trim().toLocaleLowerCase('zh-CN');
+      let pool = activeFilter === '最近使用' ? exercises.slice(0,8) : exercises.filter(e => e.part === activeFilter);
+      if (q) pool = exercises.filter(e => [e.name, e.alias, e.part, e.equipment].some(value => String(value || '').toLocaleLowerCase('zh-CN').includes(q)));
+      return pool;
+    }
+    function customExerciseEntry(query, empty = false) {
+      const safeQuery = escapeHTML(query);
+      const label = query ? `创建“${safeQuery}”` : '创建自定义动作';
+      const note = selected.length >= 4 ? '已选满 4 个，先取消一个动作' : '补充动作信息后会自动选中';
+      const entry = `<button class="custom-entry" data-action="open-custom-exercise" type="button"><span class="custom-entry-icon" aria-hidden="true">＋</span><span><strong>${label}</strong><span>${note}</span></span><span aria-hidden="true">›</span></button>`;
+      if (!empty) return entry;
+      return `<div class="no-results"><div class="no-results-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4M8 11h6"/></svg></div><h3>未找到“${safeQuery}”</h3><p>动作库中暂时没有匹配结果。你可以创建一个仅保存在本机的自定义动作。</p></div>${entry}`;
+    }
+    function renderExerciseList() {
+      const list = document.getElementById('exerciseList');
+      const query = document.getElementById('exerciseSearch').value.trim();
+      const results = filteredExercises();
+      const rows = results.map(e => {
+        const isSelected = selected.includes(e.name);
+        const customLabel = e.custom ? '<span class="custom-badge">自定义</span>' : '';
+        return `<button class="exercise-row ${isSelected?'selected':''}" data-exercise="${escapeHTML(e.name)}"><span><span class="cell-title">${escapeHTML(e.name)} ${customLabel}</span><span class="sub">${escapeHTML(e.part)} · ${escapeHTML(e.last)}</span></span><span class="check-icon">${iconCheck()}</span></button>`;
+      }).join('');
+      list.innerHTML = results.length ? rows + customExerciseEntry(query) : customExerciseEntry(query || '这个动作', true);
+      document.getElementById('selectionCount').textContent = `已选 ${selected.length}/4`;
+      document.getElementById('selectionNames').textContent = selected.length ? selected.join(' · ') : '请选择四个不重复动作';
+      document.getElementById('startWorkoutBtn').disabled = selected.length !== 4;
+    }
+    function openExerciseSheet() {
+      previousTab = ['records','progress'].includes(currentView) ? currentView : previousTab;
+      renderFilters(); renderExerciseList();
+      document.getElementById('sheetBackdrop').classList.add('open');
+      requestAnimationFrame(() => document.getElementById('exerciseSheet').classList.add('open'));
+    }
+    function closeSheet(id='exerciseSheet') {
+      document.getElementById(id).classList.remove('open');
+      setTimeout(() => document.getElementById('sheetBackdrop').classList.remove('open'), 240);
+    }
+    function updateCustomLoadType() {
+      const type = document.getElementById('customLoadType').value;
+      const incrementLabel = document.querySelector('#customIncrementRow label');
+      const help = document.getElementById('customLoadHelp');
+      const copy = {
+        normal: ['加重档位', '普通负重动作以重量增加判断进步，并使用重量与次数计算训练量。'],
+        bodyweight: ['附加重量档位', '自重动作优先比较单组次数；有附加重量时也会记录重量变化。'],
+        assisted: ['辅助调整档位', '辅助动作以更低辅助重量或相同辅助重量下更多次数判断进步。']
+      }[type];
+      incrementLabel.textContent = copy[0];
+      help.textContent = copy[1];
+    }
+    function openCustomExercise() {
+      if (selected.length >= 4) { showToast('已选满 4 个，请先取消一个'); return; }
+      const query = document.getElementById('exerciseSearch').value.trim();
+      document.getElementById('customName').value = query;
+      document.getElementById('customAlias').value = '';
+      document.getElementById('customPart').value = ['胸','背','腿','肩'].includes(activeFilter) ? activeFilter : '胸';
+      document.getElementById('customEquipment').value = '杠铃';
+      document.getElementById('customLoadType').value = 'normal';
+      document.getElementById('customRepMin').value = '8';
+      document.getElementById('customRepMax').value = '12';
+      document.getElementById('customIncrement').value = '2.5';
+      document.getElementById('customExerciseError').textContent = '';
+      updateCustomLoadType();
+      document.getElementById('sheetBackdrop').classList.add('open');
+      requestAnimationFrame(() => {
+        document.getElementById('customExerciseSheet').classList.add('open');
+        document.getElementById('customName').focus({preventScroll:true});
+      });
+    }
+    function closeCustomExercise() {
+      document.getElementById('customExerciseSheet').classList.remove('open');
+      document.getElementById('customExerciseError').textContent = '';
+    }
+    function validateCustomExercise() {
+      const name = document.getElementById('customName').value.trim().replace(/\s+/g, ' ');
+      const minRaw = document.getElementById('customRepMin').value.trim();
+      const maxRaw = document.getElementById('customRepMax').value.trim();
+      const min = Number(minRaw);
+      const max = Number(maxRaw);
+      let message = '';
+      if (!name) message = '请输入动作名称';
+      else if (exercises.some(exercise => exercise.name.trim().toLocaleLowerCase('zh-CN') === name.toLocaleLowerCase('zh-CN'))) message = '动作名称已存在，请直接从动作库选择';
+      else if (!/^\d+$/.test(minRaw) || !/^\d+$/.test(maxRaw) || min < 1 || max > 100) message = '默认次数需为 1–100 的正整数';
+      else if (min > max) message = '最低次数不能高于最高次数';
+      document.getElementById('customExerciseError').textContent = message;
+      return message ? null : {name, min, max};
+    }
+    function saveCustomExercise() {
+      const values = validateCustomExercise();
+      if (!values) return;
+      if (selected.length >= 4) { closeCustomExercise(); showToast('已选满 4 个，请先取消一个'); return; }
+      const loadType = document.getElementById('customLoadType').value;
+      const exercise = {
+        id: `custom-${Date.now()}`,
+        name: values.name,
+        alias: document.getElementById('customAlias').value.trim().replace(/\s+/g, ' '),
+        part: document.getElementById('customPart').value,
+        equipment: document.getElementById('customEquipment').value,
+        loadType,
+        repMin: values.min,
+        repMax: values.max,
+        increment: Number(document.getElementById('customIncrement').value),
+        custom: true,
+        last: '首次训练，建立基准',
+        target: `完成 4 个有效组 · ${values.min}–${values.max} 次`
+      };
+      exercises.push(exercise);
+      selected.push(exercise.name);
+      document.getElementById('exerciseSearch').value = exercise.name;
+      closeCustomExercise();
+      renderExerciseList();
+      showToast('已创建并选中');
+    }
+    function createSets(seedWeight='60', seedReps='8') {
+      const baseReps = Math.max(1, Number(seedReps) || 8);
+      setRows = Array.from({length:4}, (_,i) => ({weight: seedWeight, reps: String(i < 2 ? baseReps : baseReps + 1), done:false}));
+      renderSets();
+    }
+    function renderSets() {
+      const table = document.getElementById('setTable');
+      table.querySelectorAll('.set-row').forEach(el => el.remove());
+      setRows.forEach((set,i) => {
+        const row = document.createElement('div'); row.className = `set-row ${set.done?'completed':''}`;
+        row.innerHTML = `<span class="set-index num">${i+1}</span><button class="set-value-btn num" data-edit-set="${i}" data-edit-field="weight" aria-label="修改第${i+1}组重量，当前${set.weight}千克">${set.weight}</button><button class="set-value-btn num" data-edit-set="${i}" data-edit-field="reps" aria-label="修改第${i+1}组次数，当前${set.reps}次">${set.reps}</button><button class="set-done" data-set="${i}" aria-label="${set.done?'编辑':'完成'}第${i+1}组">${iconCheck()}</button>`;
+        table.appendChild(row);
+      });
+      const done = setRows.filter(s => s.done).length;
+      document.getElementById('setCounter').textContent = `${done}/${setRows.length} 组`;
+    }
+    function getDefaultWeightStep() {
+      const exercise = workoutExercises[currentExercise];
+      if (exercise?.increment) return exercise.increment;
+      const name = exercise?.name || '';
+      return /哑铃|侧平举|飞鸟/.test(name) ? 1 : 2.5;
+    }
+    function formatWeight(value) {
+      const n = Number(value);
+      return Number.isInteger(n) ? String(n) : n.toFixed(1);
+    }
+    function openSetEditor(index, field) {
+      editingSetIndex = index;
+      editingField = field;
+      editorWeightStep = getDefaultWeightStep();
+      const set = setRows[index];
+      const ex = workoutExercises[currentExercise];
+      const isWeight = field === 'weight';
+      const input = document.getElementById('setEditorInput');
+      document.getElementById('setEditorTitle').textContent = `修改第 ${index + 1} 组${isWeight ? '重量' : '次数'}`;
+      document.getElementById('editorContext').textContent = `${ex.name} · 上次第 ${index + 1} 组 ${set.weight} kg × ${set.reps}`;
+      input.value = isWeight ? set.weight : set.reps;
+      input.inputMode = isWeight ? 'decimal' : 'numeric';
+      input.setAttribute('aria-label', isWeight ? '重量数值' : '次数数值');
+      document.getElementById('setEditorUnit').textContent = isWeight ? 'kg' : '次';
+      document.getElementById('weightStepBlock').hidden = !isWeight;
+      document.getElementById('editorHint').textContent = isWeight ? '重量支持一位小数；保存后会重新计算本次训练结果。' : '次数必须为 1–100 的正整数；保存后会重新计算本次训练结果。';
+      document.getElementById('setEditorError').textContent = '';
+      document.getElementById('stepDescription').textContent = `该动作默认 ${editorWeightStep} kg`;
+      document.querySelectorAll('[data-weight-step]').forEach(button => button.classList.toggle('active', Number(button.dataset.weightStep) === editorWeightStep));
+      document.getElementById('sheetBackdrop').classList.add('open');
+      requestAnimationFrame(() => document.getElementById('setEditorSheet').classList.add('open'));
+    }
+    function validateSetEditor() {
+      const input = document.getElementById('setEditorInput');
+      const raw = input.value.trim().replace(',', '.');
+      const value = Number(raw);
+      let message = '';
+      if (editingField === 'weight') {
+        if (!/^\d+(\.\d)?$/.test(raw) || !Number.isFinite(value) || value < 0 || value > 500) message = '请输入 0–500 之间、最多一位小数的重量';
+      } else if (!/^\d+$/.test(raw) || !Number.isInteger(value) || value < 1 || value > 100) {
+        message = '次数必须是 1–100 的正整数';
+      }
+      document.getElementById('setEditorError').textContent = message;
+      return message ? null : value;
+    }
+    function adjustSetEditor(direction) {
+      const input = document.getElementById('setEditorInput');
+      let value = Number(input.value.replace(',', '.'));
+      if (!Number.isFinite(value)) value = Number(setRows[editingSetIndex][editingField]);
+      const delta = editingField === 'weight' ? editorWeightStep : 1;
+      const minimum = editingField === 'weight' ? 0 : 1;
+      const maximum = editingField === 'weight' ? 500 : 100;
+      value = Math.min(maximum, Math.max(minimum, value + direction * delta));
+      input.value = editingField === 'weight' ? formatWeight(Math.round(value * 10) / 10) : String(Math.round(value));
+      document.getElementById('setEditorError').textContent = '';
+    }
+    function saveSetEditor(applyFollowing = false) {
+      const value = validateSetEditor();
+      if (value === null) return;
+      const formatted = editingField === 'weight' ? formatWeight(value) : String(value);
+      setRows[editingSetIndex][editingField] = formatted;
+      if (applyFollowing) {
+        setRows.forEach((set, index) => {
+          if (index > editingSetIndex && !set.done) set[editingField] = formatted;
+        });
+      }
+      const fieldLabel = editingField === 'weight' ? '重量' : '次数';
+      closeSheet('setEditorSheet');
+      renderSets();
+      showToast(applyFollowing ? `${fieldLabel}已同步到后续未完成组` : `第 ${editingSetIndex + 1} 组${fieldLabel}已更新`);
+    }
+    function renderWorkout() {
+      const ex = workoutExercises[currentExercise];
+      document.getElementById('currentExerciseName').textContent = ex.name;
+      document.getElementById('exerciseCounter').textContent = `动作 ${currentExercise+1}/${workoutExercises.length}`;
+      document.getElementById('lastPerformance').textContent = ex.last.replace('上次 ','');
+      document.getElementById('targetPerformance').textContent = ex.target;
+      document.getElementById('workoutProgress').style.width = `${((currentExercise+1)/workoutExercises.length)*100}%`;
+      let seedWeight = ex.name.includes('哑铃') ? '22.5' : ex.name.includes('侧平举') ? '8' : '60';
+      if (ex.custom) seedWeight = ex.loadType === 'bodyweight' ? '0' : ex.loadType === 'assisted' ? '40' : formatWeight(Math.max(ex.increment * 4, 10));
+      createSets(seedWeight, ex.repMin || 8);
+    }
+    function renderWorkoutOverview() {
+      document.getElementById('workoutExerciseList').innerHTML = workoutExercises.map((ex,i) => {
+        const state = i < currentExercise ? '已完成' : i === currentExercise ? '进行中' : '未开始';
+        return `<button class="list-cell" data-jump="${i}"><span class="cell-icon">${i < currentExercise ? iconCheck() : `<span class="num">${i+1}</span>`}</span><span><span class="cell-title">${ex.name}</span><span class="cell-sub">${ex.target}</span></span><span class="badge">${state}</span></button>`;
+      }).join('');
+    }
+    function startWorkout() {
+      workoutExercises = selected.map(n => exercises.find(e => e.name === n)); currentExercise = 0; closeSheet(); renderWorkout(); showView('workout');
+    }
+    function completeCurrentExercise() {
+      if (!setRows.some(s => s.done)) { showToast('请先完成至少一组'); return; }
+      if (currentExercise < workoutExercises.length - 1) { currentExercise++; renderWorkout(); showToast('已完成，进入下一个动作'); }
+      else { showView('celebration'); }
+    }
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openBodySheet() { document.getElementById('sheetBackdrop').classList.add('open'); requestAnimationFrame(() => document.getElementById('bodySheet').classList.add('open')); }
+
+    document.addEventListener('click', e => {
+      const actionEl = e.target.closest('[data-action]');
+      if (actionEl) {
+        const action = actionEl.dataset.action;
+        const map = {progress:'progress', records:'records', 'record-detail':'detail', trend:'trend', profile:'profile', empty:'empty', 'workout-overview':'overview', 'back-workout':'workout'};
+        if (map[action]) { if (action==='records'||action==='progress') previousTab=action; if(action==='workout-overview') renderWorkoutOverview(); showView(map[action]); }
+        else if (action === 'replay-launch') { showView('progress'); playLaunch(); }
+        else if (action === 'open-exercise-sheet') openExerciseSheet();
+        else if (action === 'open-custom-exercise') openCustomExercise();
+        else if (action === 'close-custom-exercise') closeCustomExercise();
+        else if (action === 'save-custom-exercise') saveCustomExercise();
+        else if (action === 'close-sheet') {
+          const customSheet = document.getElementById('customExerciseSheet');
+          if (customSheet.classList.contains('open')) closeCustomExercise();
+          else {
+            const openSheet = ['setEditorSheet','exerciseSheet'].find(id => document.getElementById(id).classList.contains('open'));
+            closeSheet(openSheet || 'exerciseSheet');
+          }
+        }
+        else if (action === 'close-set-editor') closeSheet('setEditorSheet');
+        else if (action === 'save-set-edit') saveSetEditor(false);
+        else if (action === 'apply-set-following') saveSetEditor(true);
+        else if (action === 'body-update') openBodySheet();
+        else if (action === 'close-body-sheet') closeSheet('bodySheet');
+        else if (action === 'save-body') { closeSheet('bodySheet'); showToast('身体数据已更新'); }
+        else if (action === 'finish-workout') openModal('finishModal');
+        else if (action === 'cancel-finish') closeModal('finishModal');
+        else if (action === 'confirm-finish') { closeModal('finishModal'); showView('celebration'); }
+        else if (action === 'celebration-done') { document.getElementById('weekCount').textContent='3/3'; showView('progress'); showToast('本周目标已达成'); }
+        else if (action === 'recovery') openModal('recoveryModal');
+        else if (action === 'continue-draft') { closeModal('recoveryModal'); workoutExercises = exercises.slice(0,4); currentExercise=1; renderWorkout(); showView('workout'); }
+        else if (action === 'abandon-draft') { closeModal('recoveryModal'); showToast('训练草稿已放弃'); }
+        else if (action === 'delete-record') openModal('deleteModal');
+        else if (action === 'cancel-delete') closeModal('deleteModal');
+        else if (action === 'confirm-delete') { closeModal('deleteModal'); showView('records'); showToast('已删除 · 点按可撤销'); }
+        else if (['save-profile','edit-record','manual-checkin','privacy-info'].includes(action)) showToast(action==='manual-checkin'?'手动打卡表单已就绪':'原型中已记录操作');
+      }
+      const filter = e.target.closest('[data-filter]');
+      if (filter) { activeFilter = filter.dataset.filter; renderFilters(); renderExerciseList(); }
+      const exercise = e.target.closest('[data-exercise]');
+      if (exercise) {
+        const name = exercise.dataset.exercise;
+        if (selected.includes(name)) selected = selected.filter(n => n !== name);
+        else if (selected.length < 4) selected.push(name);
+        else showToast('已选满 4 个，请先取消一个');
+        renderExerciseList();
+      }
+      const setButton = e.target.closest('[data-set]');
+      if (setButton) { const i = Number(setButton.dataset.set); setRows[i].done = !setRows[i].done; renderSets(); if(setRows[i].done) showToast(`第 ${i+1} 组已完成`); }
+      const setValue = e.target.closest('[data-edit-set]');
+      if (setValue) openSetEditor(Number(setValue.dataset.editSet), setValue.dataset.editField);
+      const editorAdjust = e.target.closest('[data-editor-adjust]');
+      if (editorAdjust) adjustSetEditor(Number(editorAdjust.dataset.editorAdjust));
+      const weightStep = e.target.closest('[data-weight-step]');
+      if (weightStep) {
+        editorWeightStep = Number(weightStep.dataset.weightStep);
+        document.querySelectorAll('[data-weight-step]').forEach(button => button.classList.toggle('active', button === weightStep));
+        document.getElementById('stepDescription').textContent = `每次加减 ${editorWeightStep} kg`;
+      }
+      const jump = e.target.closest('[data-jump]');
+      if (jump) { currentExercise = Number(jump.dataset.jump); renderWorkout(); showView('workout'); }
+      const metric = e.target.closest('[data-metric]');
+      if (metric) {
+        document.querySelectorAll('.metric-tab').forEach(b=>b.classList.remove('active')); metric.classList.add('active');
+        const data = {weight:['最近体重','72.4 kg','4 周 −0.8 kg'],fat:['最近体脂','18.6%','4 周 −0.4%'],strength:['杠铃卧推 · 估算力量','78.9 kg','4 周 +4.2%']};
+        const d=data[metric.dataset.metric]; document.getElementById('metricLabel').textContent=d[0]; document.getElementById('metricValue').textContent=d[1]; document.getElementById('metricDelta').textContent=d[2];
+      }
+    });
+    document.getElementById('exerciseSearch').addEventListener('input', renderExerciseList);
+    document.getElementById('startWorkoutBtn').addEventListener('click', startWorkout);
+    document.getElementById('completeExerciseBtn').addEventListener('click', completeCurrentExercise);
+    document.getElementById('addSetBtn').addEventListener('click', () => { setRows.push({weight:setRows.at(-1)?.weight||'60', reps:'8', done:false}); renderSets(); });
+    document.getElementById('setEditorInput').addEventListener('input', () => { document.getElementById('setEditorError').textContent = ''; });
+    document.getElementById('setEditorInput').addEventListener('keydown', event => {
+      if (event.key === 'Enter') saveSetEditor(false);
+      if (event.key === 'Escape') closeSheet('setEditorSheet');
+    });
+    document.getElementById('customLoadType').addEventListener('change', updateCustomLoadType);
+    ['customName','customAlias','customRepMin','customRepMax'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => { document.getElementById('customExerciseError').textContent = ''; });
+    });
+    document.getElementById('customExerciseSheet').addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeCustomExercise();
+      if (event.key === 'Enter' && ['customRepMin','customRepMax'].includes(event.target.id)) saveCustomExercise();
+    });
+    document.getElementById('launchScreen').addEventListener('click', () => finishLaunch(true));
+    renderFilters(); renderExerciseList(); playLaunch();
+  </script>
+</body>
+</html>

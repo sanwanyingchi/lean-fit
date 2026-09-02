@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Lean Fit Logo</title>
+  <desc id="description">由 L 与 F 连续构成的稳定支撑形，中心台阶向上抬升，象征力量训练中的持续进步。</desc>
+  <rect x="64" y="64" width="896" height="896" rx="220" fill="#248A3D"/>
+  <path d="M304 286V704H452L570 586V286H748M570 470H696" fill="none" stroke="#FFFFFF" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="748" cy="286" r="26" fill="#64D2FF"/>
+</svg>

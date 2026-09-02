@@ -1,0 +1,24 @@
+# Build products and test result bundles
+.build/
+DerivedData/
+*.xcresult
+*.ipa
+*.dSYM
+
+# Xcode per-user state
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+
+# Swift Package Manager local state
+.swiftpm/
+
+# macOS metadata
+.DS_Store
+
+# Local design-review state
+.gstack/
+
+# Temporary visual-debug captures; curated VisualQA screenshots remain tracked
+Artifacts/VisualQA/failing-selection*
+Artifacts/VisualQA/start-button-current*
